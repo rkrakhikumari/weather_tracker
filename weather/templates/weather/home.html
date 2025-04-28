@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weather App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #6dd5fa, #2980b9);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            transition: background-color 0.5s ease; /* Smooth transition on background */
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 350px;
+            transition: transform 0.3s ease-in-out; /* Smooth transition for card */
+        }
+        .card h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 80%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            transition: width 0.3s ease-in-out; /* Smooth transition on input */
+        }
+        button {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .clear-button {
+            background: #e74c3c;
+        }
+        select {
+            padding: 8px;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+        .weather-info {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #555;
+            text-align: left;
+        }
+        .weather-info p {
+            margin: 5px 0;
+        }
+        #forecast-detail {
+            margin-top: 20px;
+        }
+    </style>
+    <script>
+        function showForecast() {
+            const forecast = JSON.parse('{{ forecast_data|safe|escapejs }}');
+            const selectedDate = document.getElementById('forecast-select').value;
+            const forecastDetail = forecast.find(day => day.date === selectedDate);
+            
+            if (forecastDetail) {
+                document.getElementById('forecast-detail').innerHTML = `
+                    <p><b>Temperature:</b> ${forecastDetail.temp_day}°C</p>
+                    <p><b>Weather:</b> ${forecastDetail.weather}</p>
+                    <p><b>Wind Speed:</b> ${forecastDetail.wind_speed} m/s</p>
+                `;
+            }
+        }
+    </script>
+</head>
+<body>
+
+<div class="card">
+    <h1>Weather App</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" id="cityInput" placeholder="Enter city name..." oninput="suggestCities()" autocomplete="off">
+        <div id="suggestions"></div>
+        <br>
+        <button type="submit">Search</button>
+        <button type="submit" name="clear" value="clear" class="clear-button">Clear</button>
+    </form>
+
+    {% if weather_data %}
+        {% if weather_data.error %}
+            <p style="color: red;">{{ weather_data.error }}</p>
+        {% else %}
+        <div class="weather-info" id="today-weather">
+            <h3>Today's Weather</h3>
+            <p>📍 <b>City:</b> {{ weather_data.city }}</p>
+            <p>🌡️ <b>Temperature:</b> {{ weather_data.temperature }}°C</p>
+            <p>☁️ <b>Weather:</b> {{ weather_data.description }}</p>
+            <p>💨 <b>Wind Speed:</b> {{ weather_data.wind_speed }} m/s</p>
+        </div>
+
+        {% if forecast_data %}
+            <h3>Forecast</h3>
+            <select id="forecast-select" onchange="showForecast()">
+                <option value="">Select Date</option>
+                {% for day in forecast_data %}
+                    <option value="{{ day.date }}">{{ day.date }}</option>
+                {% endfor %}
+            </select>
+            <div id="forecast-detail"></div>
+        {% endif %}
+        {% endif %}
+    {% endif %}
+
+</div>
+
+<script>
+    const cities = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio"];
+    
+    function suggestCities() {
+        const input = document.getElementById('cityInput').value.toLowerCase();
+        const suggestionBox = document.getElementById('suggestions');
+        suggestionBox.innerHTML = "";
+    
+        if (input.length >= 2) {
+            const matchedCities = cities.filter(city => city.toLowerCase().includes(input));
+            
+            matchedCities.forEach(city => {
+                const div = document.createElement('div');
+                div.textContent = city;
+                div.style.cursor = "pointer";
+                div.style.padding = "5px";
+                div.onclick = () => {
+                    document.getElementById('cityInput').value = city;
+                    suggestionBox.innerHTML = "";
+                };
+                suggestionBox.appendChild(div);
+            });
+        }
+    }
+    </script>
+
+
+</body>
+</html>
